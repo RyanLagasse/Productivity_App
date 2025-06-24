@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tab-nav {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            height: calc(100vh - 120px);
+        }
+
+        .tasks-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .add-task {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .task-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .task-input:focus {
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .task-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        .task-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .task-card.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .task-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            word-wrap: break-word;
+        }
+
+        .task-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .task-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 59, 59, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .task-card:hover .task-delete {
+            opacity: 1;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+
+        .current-timer {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .timer-display {
+            font-size: 48px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin: 10px 0;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .current-task {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+        }
+
+        .session-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .session-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .session-task {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .session-time {
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+        }
+
+        .analytics-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-container {
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            overflow-y: auto;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-weight: 600;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .export-section {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .export-btn {
+            background: linear-gradient(45deg, #00cc66, #009945);
+            margin: 0 10px;
+        }
+
+        .export-btn:hover {
+            box-shadow: 0 4px 12px rgba(0, 204, 102, 0.3);
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.6);
+            border-radius: 3px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">Focus Timer</div>
+            <nav class="tab-nav">
+                <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+                <button class="tab-btn" data-tab="analytics">Analytics</button>
+            </nav>
+        </header>
+
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="main-grid">
+                <div class="tasks-section">
+                    <h2 class="section-title">Tasks</h2>
+                    <div class="add-task">
+                        <input type="text" class="task-input" placeholder="Enter task name..." id="taskInput">
+                        <button class="btn" id="addTaskBtn">Add Task</button>
+                    </div>
+                    <div class="task-list scrollbar" id="taskList"></div>
+                </div>
+
+                <div class="sidebar">
+                    <div class="sidebar-section">
+                        <div class="current-timer">
+                            <div class="current-task" id="currentTaskName">No active task</div>
+                            <div class="timer-display" id="timerDisplay">00:00:00</div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Today's Sessions</h3>
+                        <div class="session-list scrollbar" id="sessionList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analytics-tab" class="tab-content">
+            <div class="export-section">
+                <button class="btn export-btn" id="exportCSV">Export Sessions CSV</button>
+                <button class="btn export-btn" id="exportSummary">Export Summary CSV</button>
+            </div>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3 class="section-title">Today's Summary</h3>
+                    <div class="chart-container" id="todaySummary"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3 class="section-title">Task Distribution (All Time)</h3>
+                    <div class="chart-container" id="taskDistribution"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3 class="section-title">Hourly Productivity</h3>
+                    <div class="chart-container" id="hourlyStats"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3 class="section-title">Weekly Performance</h3>
+                    <div class="chart-container" id="weeklyTrends"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class FocusTimer {
+            constructor() {
+                this.tasks = this.loadData('tasks') || {};
+                this.sessions = this.loadData('sessions') || [];
+                this.currentTask = null;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.analyticsCache = null;
+                this.lastCacheUpdate = 0;
+
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.renderTasks();
+                this.renderSessions();
+                this.updateTimer();
+                this.startTimerLoop();
+                this.renderAnalytics();
+            }
+
+            bindEvents() {
+                // Tab switching
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
+                });
+
+                // Task management
+                document.getElementById('addTaskBtn').addEventListener('click', () => this.addTask());
+                document.getElementById('taskInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTask();
+                });
+
+                // CSV exports
+                document.getElementById('exportCSV').addEventListener('click', () => this.exportSessionsCSV());
+                document.getElementById('exportSummary').addEventListener('click', () => this.exportSummaryCSV());
+            }
+
+            switchTab(tabName) {
+                // Update tab buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+                // Update tab content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+
+                // Refresh analytics if switching to analytics tab
+                if (tabName === 'analytics') {
+                    this.renderAnalytics();
+                }
+            }
+
+            addTask() {
+                const input = document.getElementById('taskInput');
+                const taskName = input.value.trim();
+
+                if (!taskName) return;
+                if (Object.values(this.tasks).some(t => t.name === taskName)) {
+                    alert('Task already exists');
+                    return;
+                }
+
+                const taskId = Date.now().toString();
+                this.tasks[taskId] = {
+                    id: taskId,
+                    name: taskName,
+                    totalTime: 0,
+                    created: new Date().toISOString()
+                };
+
+                this.saveData('tasks', this.tasks);
+                this.invalidateCache();
+                input.value = '';
+                this.renderTasks();
+            }
+
+            deleteTask(taskId) {
+                // Stop task if it's currently active
+                if (this.currentTask === taskId) {
+                    this.stopCurrentTask();
+                }
+
+                delete this.tasks[taskId];
+                // Remove associated sessions
+                this.sessions = this.sessions.filter(s => s.taskId !== taskId);
+                
+                this.saveData('tasks', this.tasks);
+                this.saveData('sessions', this.sessions);
+                this.invalidateCache();
+                this.renderTasks();
+                this.renderSessions();
+            }
+
+            startTask(taskId) {
+                // Stop current task if any
+                if (this.currentTask) {
+                    this.stopCurrentTask();
+                }
+
+                this.currentTask = taskId;
+                this.startTime = Date.now();
+                
+                document.getElementById('currentTaskName').textContent = this.tasks[taskId].name;
+                this.renderTasks();
+            }
+
+            stopCurrentTask() {
+                if (!this.currentTask || !this.startTime) return;
+
+                const duration = Date.now() - this.startTime;
+                // Only save sessions longer than 30 seconds to avoid noise
+                if (duration < 30000) {
+                    this.currentTask = null;
+                    this.startTime = null;
+                    document.getElementById('currentTaskName').textContent = 'No active task';
+                    return;
+                }
+
+                const session = {
+                    id: Date.now().toString(),
+                    taskId: this.currentTask,
+                    taskName: this.tasks[this.currentTask].name,
+                    startTime: this.startTime,
+                    endTime: Date.now(),
+                    duration: duration,
+                    date: new Date(this.startTime).toISOString().split('T')[0]
+                };
+
+                this.sessions.push(session);
+                this.tasks[this.currentTask].totalTime += duration;
+
+                this.saveData('sessions', this.sessions);
+                this.saveData('tasks', this.tasks);
+                this.invalidateCache();
+
+                this.currentTask = null;
+                this.startTime = null;
+                
+                document.getElementById('currentTaskName').textContent = 'No active task';
+                this.renderSessions();
+                this.autoSaveCSV();
+            }
+
+            startTimerLoop() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    this.updateTimer();
+                }, 1000);
+            }
+
+            updateTimer() {
+                const display = document.getElementById('timerDisplay');
+                
+                if (this.currentTask && this.startTime) {
+                    const elapsed = Date.now() - this.startTime;
+                    display.textContent = this.formatTime(elapsed);
+                } else {
+                    display.textContent = '00:00:00';
+                }
+            }
+
+            renderTasks() {
+                const container = document.getElementById('taskList');
+                container.innerHTML = '';
+
+                Object.values(this.tasks).forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = `task-card ${this.currentTask === task.id ? 'active' : ''}`;
+                    
+                    const todayTime = this.getTodayTime(task.id);
+                    const sessionTime = this.getSessionTime(task.id);
+
+                    taskElement.innerHTML = `
+                        <button class="task-delete" onclick="timer.deleteTask('${task.id}')">&times;</button>
+                        <div class="task-name">${this.escapeHtml(task.name)}</div>
+                        <div class="task-stats">
+                            <div class="stat-row">
+                                <span>Today:</span>
+                                <span>${this.formatTime(todayTime)}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Session:</span>
+                                <span>${this.formatTime(sessionTime)}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Total:</span>
+                                <span>${this.formatTime(task.totalTime)}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    taskElement.addEventListener('click', (e) => {
+                        if (!e.target.classList.contains('task-delete')) {
+                            this.startTask(task.id);
+                        }
+                    });
+
+                    container.appendChild(taskElement);
+                });
+            }
+
+            renderSessions() {
+                const container = document.getElementById('sessionList');
+                const today = new Date().toDateString();
+                
+                const todaySessions = this.sessions
+                    .filter(session => new Date(session.startTime).toDateString() === today)
+                    .slice(-10)
+                    .reverse();
+
+                container.innerHTML = todaySessions.map(session => `
+                    <div class="session-item">
+                        <div class="session-task">${this.escapeHtml(session.taskName)}</div>
+                        <div class="session-time">
+                            ${new Date(session.startTime).toLocaleTimeString()} - 
+                            ${new Date(session.endTime).toLocaleTimeString()}
+                            (${this.formatTime(session.duration)})
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Analytics Implementation
+            getAnalyticsData() {
+                const now = Date.now();
+                if (this.analyticsCache && (now - this.lastCacheUpdate) < 60000) {
+                    return this.analyticsCache;
+                }
+
+                const today = new Date().toISOString().split('T')[0];
+                const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+                // Today's data
+                const todaySessions = this.sessions.filter(s => s.date === today);
+                const todayByTask = this.groupBy(todaySessions, 'taskName');
+                const todayTotals = Object.entries(todayByTask).map(([name, sessions]) => ({
+                    name,
+                    time: sessions.reduce((sum, s) => sum + s.duration, 0),
+                    sessions: sessions.length
+                })).sort((a, b) => b.time - a.time);
+
+                // All-time task distribution
+                const allTimeByTask = this.groupBy(this.sessions, 'taskName');
+                const taskDistribution = Object.entries(allTimeByTask).map(([name, sessions]) => ({
+                    name,
+                    time: sessions.reduce((sum, s) => sum + s.duration, 0),
+                    sessions: sessions.length
+                })).sort((a, b) => b.time - a.time);
+
+                // Hourly productivity
+                const hourlyData = new Array(24).fill(0);
+                this.sessions.forEach(session => {
+                    const hour = new Date(session.startTime).getHours();
+                    hourlyData[hour] += session.duration;
+                });
+
+                // Weekly performance
+                const last7Days = Array.from({length: 7}, (_, i) => {
+                    const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const daySessions = this.sessions.filter(s => s.date === dateStr);
+                    return {
+                        date: dateStr,
+                        dayName: date.toLocaleDateString('en', {weekday: 'short'}),
+                        time: daySessions.reduce((sum, s) => sum + s.duration, 0),
+                        sessions: daySessions.length
+                    };
+                }).reverse();
+
+                this.analyticsCache = {
+                    todayTotals,
+                    taskDistribution,
+                    hourlyData,
+                    weeklyData: last7Days,
+                    totalTime: this.sessions.reduce((sum, s) => sum + s.duration, 0),
+                    totalSessions: this.sessions.length
+                };
+                this.lastCacheUpdate = now;
+
+                return this.analyticsCache;
+            }
+
+            renderAnalytics() {
+                const data = this.getAnalyticsData();
+
+                // Today's Summary
+                this.renderTodaySummary(data.todayTotals);
+                
+                // Task Distribution
+                this.renderTaskDistribution(data.taskDistribution);
+                
+                // Hourly Stats
+                this.renderHourlyStats(data.hourlyData);
+                
+                // Weekly Trends
+                this.renderWeeklyTrends(data.weeklyData);
+            }
+
+            renderTodaySummary(todayTotals) {
+                const container = document.getElementById('todaySummary');
+                const totalTime = todayTotals.reduce((sum, t) => sum + t.time, 0);
+                
+                if (todayTotals.length === 0) {
+                    container.innerHTML = '<div class="stat-item"><span>No sessions today</span></div>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Total Time:</span>
+                        <span class="stat-value">${this.formatTime(totalTime)}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sessions:</span>
+                        <span class="stat-value">${todayTotals.reduce((sum, t) => sum + t.sessions, 0)}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Active Tasks:</span>
+                        <span class="stat-value">${todayTotals.length}</span>
+                    </div>
+                    ${todayTotals.slice(0, 5).map(task => `
+                        <div class="stat-item">
+                            <span class="stat-label">${this.escapeHtml(task.name)}:</span>
+                            <span class="stat-value">${this.formatTime(task.time)}</span>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            renderTaskDistribution(taskDistribution) {
+                const container = document.getElementById('taskDistribution');
+                const maxTime = Math.max(...taskDistribution.map(t => t.time), 1);
+                
+                if (taskDistribution.length === 0) {
+                    container.innerHTML = '<div class="stat-item"><span>No data available</span></div>';
+                    return;
+                }
+
+                container.innerHTML = taskDistribution.slice(0, 8).map(task => `
+                    <div class="stat-item">
+                        <div style="width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span class="stat-label">${this.escapeHtml(task.name)}</span>
+                                <span class="stat-value">${this.formatTime(task.time)}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${(task.time / maxTime) * 100}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderHourlyStats(hourlyData) {
+                const container = document.getElementById('hourlyStats');
+                const maxHour = Math.max(...hourlyData, 1);
+                const peakHour = hourlyData.indexOf(maxHour);
+                
+                const productiveHours = hourlyData
+                    .map((time, hour) => ({hour, time}))
+                    .filter(h => h.time > 0)
+                    .sort((a, b) => b.time - a.time)
+                    .slice(0, 5);
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Peak Hour:</span>
+                        <span class="stat-value">${peakHour}:00 (${this.formatTime(maxHour)})</span>
+                    </div>
+                    ${productiveHours.map(h => `
+                        <div class="stat-item">
+                            <span class="stat-label">${h.hour}:00 - ${h.hour + 1}:00:</span>
+                            <span class="stat-value">${this.formatTime(h.time)}</span>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            renderWeeklyTrends(weeklyData) {
+                const container = document.getElementById('weeklyTrends');
+                const maxTime = Math.max(...weeklyData.map(d => d.time), 1);
+                const avgTime = weeklyData.reduce((sum, d) => sum + d.time, 0) / weeklyData.length;
+                
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Daily Average:</span>
+                        <span class="stat-value">${this.formatTime(avgTime)}</span>
+                    </div>
+                    ${weeklyData.map(day => `
+                        <div class="stat-item">
+                            <div style="width: 100%;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span class="stat-label">${day.dayName}</span>
+                                    <span class="stat-value">${this.formatTime(day.time)}</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${(day.time / maxTime) * 100}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            // CSV Export Functions
+            exportSessionsCSV() {
+                if (this.sessions.length === 0) {
+                    alert('No sessions to export');
+                    return;
+                }
+
+                const headers = ['Date', 'Task Name', 'Start Time', 'End Time', 'Duration (minutes)', 'Duration (formatted)'];
+                const rows = this.sessions.map(session => [
+                    session.date,
+                    `"${session.taskName.replace(/"/g, '""')}"`,
+                    new Date(session.startTime).toISOString(),
+                    new Date(session.endTime).toISOString(),
+                    (session.duration / 60000).toFixed(2),
+                    this.formatTime(session.duration)
+                ]);
+
+                const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+                this.downloadCSV(csv, `focus-timer-sessions-${new Date().toISOString().split('T')[0]}.csv`);
+            }
+
+            exportSummaryCSV() {
+                const data = this.getAnalyticsData();
+                if (data.taskDistribution.length === 0) {
+                    alert('No data to export');
+                    return;
+                }
+
+                const headers = ['Task Name', 'Total Time (minutes)', 'Total Time (formatted)', 'Session Count', 'Average Session (minutes)'];
+                const rows = data.taskDistribution.map(task => [
+                    `"${task.name.replace(/"/g, '""')}"`,
+                    (task.time / 60000).toFixed(2),
+                    this.formatTime(task.time),
+                    task.sessions,
+                    (task.time / task.sessions / 60000).toFixed(2)
+                ]);
+
+                const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+                this.downloadCSV(csv, `focus-timer-summary-${new Date().toISOString().split('T')[0]}.csv`);
+            }
+
+            downloadCSV(content, filename) {
+                const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', filename);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            autoSaveCSV() {
+                // Auto-save every 10 sessions to prevent data loss
+                if (this.sessions.length % 10 === 0) {
+                    this.exportSessionsCSV();
+                }
+            }
+
+            // Utility Functions
+            getTodayTime(taskId) {
+                const today = new Date().toDateString();
+                return this.sessions
+                    .filter(s => s.taskId === taskId && new Date(s.startTime).toDateString() === today)
+                    .reduce((total, s) => total + s.duration, 0);
+            }
+
+            getSessionTime(taskId) {
+                if (this.currentTask === taskId && this.startTime) {
+                    return Date.now() - this.startTime;
+                }
+                return 0;
+            }
+
+            formatTime(ms) {
+                const seconds = Math.floor(ms / 1000);
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            groupBy(array, key) {
+                return array.reduce((groups, item) => {
+                    const group = item[key];
+                    groups[group] = groups[group] || [];
+                    groups[group].push(item);
+                    return groups;
+                }, {});
+            }
+
+            escapeHtml(text) {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+
+            invalidateCache() {
+                this.analyticsCache = null;
+                this.lastCacheUpdate = 0;
+            }
+
+            saveData(key, data) {
+                try {
+                    localStorage.setItem(`focusTimer_${key}`, JSON.stringify(data));
+                } catch (e) {
+                    console.error('Failed to save data:', e);
+                    alert('Storage quota exceeded. Export your data and clear old sessions.');
+                }
+            }
+
+            loadData(key) {
+                try {
+                    const data = localStorage.getItem(`focusTimer_${key}`);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) {
+                    console.error('Failed to load data:', e);
+                    return null;
+                }
+            }
+
+            destroy() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                }
+                if (this.currentTask) {
+                    this.stopCurrentTask();
+                }
+            }
+        }
+
+        // Initialize the timer
+        const timer = new FocusTimer();
+
+        // Handle page visibility to stop/start timer appropriately
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && timer.currentTask) {
+                // Optionally pause timer when tab is hidden
+            }
+        });
+
+        // Save session when page unloads
+        window.addEventListener('beforeunload', () => {
+            timer.destroy();
+        });
+    </script>
+</body>
+</html>
